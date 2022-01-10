@@ -44,6 +44,8 @@ public class DestroyServlet extends HttpServlet {
             em.remove(m);       // データ削除
             //さらに em.getTransaction().commit(); でコミットする必要あり
             em.getTransaction().commit();
+            //Chapter 15.3フラッシュメッセージをセッションスコープにセット
+            request.getSession().setAttribute("flush", "削除が完了しました。");
             em.close();
 
             // セッションスコープ上の不要になったデータを削除

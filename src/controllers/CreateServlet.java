@@ -61,6 +61,8 @@ public class CreateServlet extends HttpServlet {
             em.persist(m);
             //commit
             em.getTransaction().commit();
+            //Chapter 15.3フラッシュメッセージをセッションスコープにセット
+            request.getSession().setAttribute("flush", "登録が完了しました。");
             em.close();
 
             //データベースへの保存が完了したら、indexページへリダイレクト（遷移）させる
