@@ -2,8 +2,10 @@ package controllers;
 
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -11,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import models.Message;
+import models.validators.MessageValidator;
 import utils.DBUtil;
 /**
  * Servlet implementation class UpdateServlet
@@ -50,20 +53,37 @@ public class UpdateServlet extends HttpServlet {
 
             Timestamp currentTime = new Timestamp(System.currentTimeMillis());
             m.setUpdated_at(currentTime);       // 更新日時のみ上書き
+            
+            
+            //Chapter 15.4 入力内容のチェック（バリデーション）
+            // バリデーションを実行してエラーがあったら編集画面のフォームに戻る
+            List<String> errors = MessageValidator.validate(m);
+            if(errors.size() > 0) {
+                em.close();
+            
+                // フォームに初期値を設定、さらにエラーメッセージを送る
+                request.setAttribute("_token", request.getSession().getId());
+                request.setAttribute("message", m);
+                request.setAttribute("errors", errors);
 
-            // データベースを更新
-            em.getTransaction().begin();
-            em.getTransaction().commit();
-            //Chapter 15.3フラッシュメッセージをセッションスコープにセット
-            request.getSession().setAttribute("flush", "更新が完了しました。");
-            em.close();
+                RequestDispatcher rd = request.getRequestDispatcher("/WEB-INF/views/messages/edit.jsp");
+                rd.forward(request, response);
 
-            //更新が完了した時点でセッションスコープ上のデータは不要
-            // セッションスコープ上の不要になったデータを削除
-            request.getSession().removeAttribute("message_id");
+            } else {
+                // データベースを更新
+                em.getTransaction().begin();
+                em.getTransaction().commit();
+                //Chapter 15.3フラッシュメッセージをセッションスコープにセット
+                request.getSession().setAttribute("flush", "更新が完了しました。");
+                em.close();
 
-            // indexページへリダイレクト
-            response.sendRedirect(request.getContextPath() + "/index");
+                //更新が完了した時点でセッションスコープ上のデータは不要
+                // セッションスコープ上の不要になったデータを削除
+                request.getSession().removeAttribute("message_id");
+
+                // indexページへリダイレクト
+                response.sendRedirect(request.getContextPath() + "/index");
+            }
         }
         //http://localhost:8080/message_board/show?id=1
         //http://localhost:8080/message_board/index
